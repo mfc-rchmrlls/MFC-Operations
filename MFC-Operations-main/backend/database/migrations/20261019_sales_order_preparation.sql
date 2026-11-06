@@ -1,0 +1,50 @@
+-- Add a separate local Sales Order preparation workflow without changing invoices.
+-- Run once against withdrawal_qb after backing up the database.
+CREATE TABLE IF NOT EXISTS sales_orders (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    withdrawal_id BIGINT UNSIGNED NOT NULL UNIQUE,
+    customer_id BIGINT UNSIGNED NOT NULL,
+    qb_customer_list_id VARCHAR(100) NULL,
+    so_number VARCHAR(100) NULL,
+    sales_order_date DATE NOT NULL,
+    po_no VARCHAR(100) NULL,
+    memo TEXT NULL,
+    status ENUM('Draft') NOT NULL DEFAULT 'Draft',
+    created_by BIGINT UNSIGNED NULL,
+    updated_by BIGINT UNSIGNED NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_sales_orders_so_number (so_number),
+    CONSTRAINT fk_sales_orders_withdrawal FOREIGN KEY (withdrawal_id) REFERENCES withdrawals(id),
+    CONSTRAINT fk_sales_orders_customer FOREIGN KEY (customer_id) REFERENCES clients(id),
+    CONSTRAINT fk_sales_orders_created FOREIGN KEY (created_by) REFERENCES employees(id) ON DELETE SET NULL,
+    CONSTRAINT fk_sales_orders_updated FOREIGN KEY (updated_by) REFERENCES employees(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS sales_order_items (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    sales_order_id BIGINT UNSIGNED NOT NULL,
+    line_no SMALLINT UNSIGNED NOT NULL,
+    product_id BIGINT UNSIGNED NULL,
+    item_name VARCHAR(255) NOT NULL,
+    item_code VARCHAR(100) NULL,
+    qb_item_list_id VARCHAR(100) NULL,
+    site_id BIGINT UNSIGNED NULL,
+    description VARCHAR(255) NOT NULL,
+    ordered_quantity BIGINT UNSIGNED NOT NULL,
+    lot_number VARCHAR(100) NULL,
+    u_m VARCHAR(40) NULL,
+    rate DECIMAL(12,2) NULL,
+    class_name VARCHAR(100) NULL,
+    amount DECIMAL(14,2) NOT NULL,
+    line_status VARCHAR(40) NULL,
+    fulfilled_quantity BIGINT UNSIGNED NULL,
+    expiration_date DATE NULL,
+    tax_code VARCHAR(40) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_sales_order_line (sales_order_id, line_no),
+    CONSTRAINT fk_soi_sales_order FOREIGN KEY (sales_order_id) REFERENCES sales_orders(id) ON DELETE CASCADE,
+    CONSTRAINT fk_soi_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+    CONSTRAINT fk_soi_site FOREIGN KEY (site_id) REFERENCES sites(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
